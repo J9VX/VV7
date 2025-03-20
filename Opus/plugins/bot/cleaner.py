@@ -46,10 +46,16 @@ async def stop_cleaner(_, message):
         "<blockquote><b>🛑 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴄᴀɴɴᴏᴛ ʙᴇ ꜱᴛᴏᴘᴘᴇᴅ.</b></blockquote>",
     )
 
-# Command to clear terminal logs (only for SUDOERS)
+
 @app.on_message(filters.command("clear") & SUDOERS)
 async def clear_terminal(_, message):
+    # Clear the terminal immediately
     os.system('cls' if os.name == 'nt' else 'clear')
     await message.reply_text(
-        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ.</b></blockquote>",
+        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ. ᴀᴜᴛᴏ ᴄʟᴇᴀʀɪɴɢ ᴇᴠᴇʀʏ 5 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
     )
+
+    while True:
+        await asyncio.sleep(5)  # Wait for 5 seconds
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("🔄 Terminal logs cleared automatically.")
