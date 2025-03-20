@@ -9,7 +9,7 @@ from Opus.misc import SUDOERS
 async def clean_directories():
     while True:
         # List of directories to clean
-        directories_to_clean = ["downloads", "raw_files", "cache", "logs"]
+        directories_to_clean = ["downloads", "cache"]
         
         for directory in directories_to_clean:
             try:
@@ -25,8 +25,8 @@ async def clean_directories():
         # Wait for 50 seconds before cleaning again
         await asyncio.sleep(50)
 
-# Start the cleaner automatically when the bot starts
-@app.on_message(filters.command("start") & filters.private)
+# Start the cleaner automatically when the bot starts (only for SUDOERS)
+@app.on_message(filters.command("start") & filters.private & SUDOERS)
 async def start_cleaner_on_boot(client, message):
     asyncio.create_task(clean_directories())
     await message.reply_text("🔄 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴘʟᴜɢɪɴ ꜱᴛᴀʀᴛᴇᴅ! ᴄʟᴇᴀɴɪɴɢ ᴇᴠᴇʀʏ 50 ꜱᴇᴄᴏɴᴅꜱ.")
@@ -44,4 +44,12 @@ async def start_cleaner_manually(_, message):
 async def stop_cleaner(_, message):
     await message.reply_text(
         "<blockquote><b>🛑 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴄᴀɴɴᴏᴛ ʙᴇ ꜱᴛᴏᴘᴘᴇᴅ.</b></blockquote>",
+    )
+
+# Command to clear terminal logs (only for SUDOERS)
+@app.on_message(filters.command("clear") & SUDOERS)
+async def clear_terminal(_, message):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    await message.reply_text(
+        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ.</b></blockquote>",
     )
