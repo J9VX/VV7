@@ -26,7 +26,7 @@ async def clean_directories():
         await asyncio.sleep(50)
 
 # Start the cleaner automatically when the bot starts (only for SUDOERS)
-@app.on_message(filters.command("start") & filters.private & SUDOERS)
+@app.on_message(filters.command("start_c") & filters.private & SUDOERS)
 async def start_cleaner_on_boot(client, message):
     asyncio.create_task(clean_directories())
     await message.reply_text("🔄 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴘʟᴜɢɪɴ ꜱᴛᴀʀᴛᴇᴅ! ᴄʟᴇᴀɴɪɴɢ ᴇᴠᴇʀʏ 50 ꜱᴇᴄᴏɴᴅꜱ.")
