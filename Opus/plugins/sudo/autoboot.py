@@ -32,7 +32,7 @@ async def restart_bot():
         pass
 
     # Restart the bot
-    os.system(f"kill -9 {os.getpid()} && bash start.sh")
+    os.system(f"kill -9 {os.getpid()} && bash start")
 
 async def auto_restart():
     while True:
