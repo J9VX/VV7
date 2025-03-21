@@ -23,7 +23,7 @@ async def clean_directories():
                 print(f"❌ Error cleaning directory {directory}: {e}")
 
         # Wait for 50 seconds before cleaning again
-        await asyncio.sleep(50)
+        await asyncio.sleep(80)
 
 # Start the cleaner automatically when the bot starts (only for SUDOERS)
 @app.on_message(filters.command("start_c") & filters.private & SUDOERS)
@@ -52,10 +52,10 @@ async def clear_terminal(_, message):
     # Clear the terminal immediately
     os.system('cls' if os.name == 'nt' else 'clear')
     await message.reply_text(
-        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ. ᴀᴜᴛᴏ ᴄʟᴇᴀʀɪɴɢ ᴇᴠᴇʀʏ 5 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
+        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ. ᴀᴜᴛᴏ ᴄʟᴇᴀʀɪɴɢ ᴇᴠᴇʀʏ 15 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
     )
 
     while True:
-        await asyncio.sleep(5)  # Wait for 5 seconds
+        await asyncio.sleep(15)  # Wait for 5 seconds
         os.system('cls' if os.name == 'nt' else 'clear')
         print("🔄 Terminal logs cleared automatically.")
