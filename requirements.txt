@@ -27,3 +27,4 @@ yt-dlp==2025.2.19
 flask_restful
 flask
 gunicorn
+GitPython
