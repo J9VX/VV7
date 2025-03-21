@@ -29,3 +29,4 @@ flask
 gunicorn
 GitPython
 PyYAML
+unidecode
