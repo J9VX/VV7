@@ -1,8 +1,11 @@
 import asyncio
-import os
-import re
+import glob
 import json
-from typing import Union
+import logging
+import os
+import random
+import re
+from typing import Union, Optional, Tuple, List, Dict
 
 import yt_dlp
 from pyrogram.enums import MessageEntityType
@@ -12,75 +15,12 @@ from youtubesearchpython.__future__ import VideosSearch
 from Opus.utils.database import is_on_off
 from Opus.utils.formatters import time_to_seconds
 
-
-
-import os
-import glob
-import random
-import logging
-
-def cookie_txt_file():
-    folder_path = f"{os.getcwd()}/cookies"
-    filename = f"{os.getcwd()}/cookies/logs.csv"
-    txt_files = glob.glob(os.path.join(folder_path, '*.txt'))
-    if not txt_files:
-        raise FileNotFoundError("No .txt files found in the specified folder.")
-    cookie_txt_file = random.choice(txt_files)
-    with open(filename, 'a') as file:
-        file.write(f'Choosen File : {cookie_txt_file}\n')
-    return f"""cookies/{str(cookie_txt_file).split("/")[-1]}"""
-
-
-
-async def check_file_size(link):
-    async def get_format_info(link):
-        proc = await asyncio.create_subprocess_exec(
-            "yt-dlp",
-            "--cookies", cookie_txt_file(),
-            "-J",
-            link,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await proc.communicate()
-        if proc.returncode != 0:
-            print(f'Error:\n{stderr.decode()}')
-            return None
-        return json.loads(stdout.decode())
-
-    def parse_size(formats):
-        total_size = 0
-        for format in formats:
-            if 'filesize' in format:
-                total_size += format['filesize']
-        return total_size
-
-    info = await get_format_info(link)
-    if info is None:
-        return None
-    
-    formats = info.get('formats', [])
-    if not formats:
-        print("No formats found.")
-        return None
-    
-    total_size = parse_size(formats)
-    return total_size
-
-async def shell_cmd(cmd):
-    proc = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    out, errorz = await proc.communicate()
-    if errorz:
-        if "unavailable videos are hidden" in (errorz.decode("utf-8")).lower():
-            return out.decode("utf-8")
-        else:
-            return errorz.decode("utf-8")
-    return out.decode("utf-8")
-
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 class YouTubeAPI:
     def __init__(self):
@@ -90,326 +30,233 @@ class YouTubeAPI:
         self.listbase = "https://youtube.com/playlist?list="
         self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
-    async def exists(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if re.search(self.regex, link):
-            return True
-        else:
-            return False
+    def _get_cookie_file(self) -> Optional[str]:
+        """Selects a random cookie file from the cookies directory."""
+        try:
+            cookie_dir = os.path.join(os.getcwd(), "cookies")
+            os.makedirs(cookie_dir, exist_ok=True)
+            
+            txt_files = glob.glob(os.path.join(cookie_dir, "*.txt"))
+            if not txt_files:
+                logger.warning("No cookie files found in the cookies directory.")
+                return None
 
-    async def url(self, message_1: Message) -> Union[str, None]:
-        messages = [message_1]
-        if message_1.reply_to_message:
-            messages.append(message_1.reply_to_message)
-        text = ""
-        offset = None
-        length = None
-        for message in messages:
-            if offset:
-                break
-            if message.entities:
-                for entity in message.entities:
-                    if entity.type == MessageEntityType.URL:
-                        text = message.text or message.caption
-                        offset, length = entity.offset, entity.length
-                        break
-            elif message.caption_entities:
-                for entity in message.caption_entities:
-                    if entity.type == MessageEntityType.TEXT_LINK:
-                        return entity.url
-        if offset in (None,):
+            chosen_file = random.choice(txt_files)
+            log_file = os.path.join(cookie_dir, "logs.csv")
+            
+            with open(log_file, "a") as f:
+                f.write(f"Selected cookie file: {chosen_file}\n")
+            
+            return chosen_file
+        except Exception as e:
+            logger.error(f"Error selecting cookie file: {e}")
             return None
-        return text[offset : offset + length]
 
-    async def details(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            title = result["title"]
-            duration_min = result["duration"]
-            thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-            vidid = result["id"]
-            if str(duration_min) == "None":
-                duration_sec = 0
-            else:
-                duration_sec = int(time_to_seconds(duration_min))
-        return title, duration_min, duration_sec, thumbnail, vidid
-
-    async def title(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            title = result["title"]
-        return title
-
-    async def duration(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            duration = result["duration"]
-        return duration
-
-    async def thumbnail(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-        return thumbnail
-
-    async def video(self, link: str, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        proc = await asyncio.create_subprocess_exec(
-            "yt-dlp",
-            "--cookies",cookie_txt_file(),
-            "-g",
-            "-f",
-            "best[height<=?720][width<=?1280]",
-            f"{link}",
+    async def _run_shell_cmd(self, cmd: str) -> str:
+        """Runs a shell command and returns its output."""
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
-        if stdout:
-            return 1, stdout.decode().split("\n")[0]
-        else:
-            return 0, stderr.decode()
+        
+        if proc.returncode != 0:
+            error_msg = stderr.decode("utf-8").strip()
+            if "unavailable videos are hidden" in error_msg.lower():
+                return stdout.decode("utf-8").strip()
+            logger.error(f"Command failed: {cmd}\nError: {error_msg}")
+            return error_msg
+        return stdout.decode("utf-8").strip()
 
-    async def playlist(self, link, limit, user_id, videoid: Union[bool, str] = None):
-        if videoid:
-            link = self.listbase + link
-        if "&" in link:
-            link = link.split("&")[0]
-        playlist = await shell_cmd(
-            f"yt-dlp -i --get-id --flat-playlist --cookies {cookie_txt_file()} --playlist-end {limit} --skip-download {link}"
+    async def _get_video_info(self, link: str) -> Optional[Dict]:
+        """Fetches video info using yt-dlp."""
+        cookie_file = self._get_cookie_file()
+        cmd = [
+            "yt-dlp",
+            "--cookies", cookie_file if cookie_file else "",
+            "-J",
+            link,
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
+        stdout, stderr = await proc.communicate()
+        
+        if proc.returncode != 0:
+            logger.error(f"Failed to fetch video info: {stderr.decode()}")
+            return None
+        
         try:
-            result = playlist.split("\n")
-            for key in result:
-                if key == "":
-                    result.remove(key)
-        except:
-            result = []
-        return result
+            return json.loads(stdout.decode())
+        except json.JSONDecodeError:
+            logger.error("Failed to parse video info.")
+            return None
 
-    async def track(self, link: str, videoid: Union[bool, str] = None):
+    async def check_file_size(self, link: str) -> Optional[int]:
+        """Returns the file size in bytes if available."""
+        info = await self._get_video_info(link)
+        if not info:
+            return None
+        
+        formats = info.get("formats", [])
+        total_size = sum(f.get("filesize", 0) for f in formats)
+        return total_size if total_size > 0 else None
+
+    async def exists(self, link: str, videoid: bool = False) -> bool:
+        """Checks if the given link is a valid YouTube URL."""
+        if videoid:
+            link = self.base + link
+        return bool(re.search(self.regex, link))
+
+    async def url(self, message: Message) -> Optional[str]:
+        """Extracts a YouTube URL from a Pyrogram message."""
+        messages = [message]
+        if message.reply_to_message:
+            messages.append(message.reply_to_message)
+        
+        for msg in messages:
+            # Check entities (URLs)
+            if msg.entities:
+                for entity in msg.entities:
+                    if entity.type == MessageEntityType.URL:
+                        text = msg.text or msg.caption
+                        return text[entity.offset : entity.offset + entity.length]
+            
+            # Check caption entities (TEXT_LINK)
+            if msg.caption_entities:
+                for entity in msg.caption_entities:
+                    if entity.type == MessageEntityType.TEXT_LINK:
+                        return entity.url
+        
+        return None
+
+    async def details(
+        self, 
+        link: str, 
+        videoid: bool = False
+    ) -> Tuple[str, str, int, str, str]:
+        """Fetches video details (title, duration, thumbnail, ID)."""
         if videoid:
             link = self.base + link
         if "&" in link:
             link = link.split("&")[0]
+        
         results = VideosSearch(link, limit=1)
-        for result in (await results.next())["result"]:
-            title = result["title"]
-            duration_min = result["duration"]
-            vidid = result["id"]
-            yturl = result["link"]
-            thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-        track_details = {
-            "title": title,
-            "link": yturl,
-            "vidid": vidid,
-            "duration_min": duration_min,
-            "thumb": thumbnail,
-        }
-        return track_details, vidid
+        video_data = (await results.next())["result"][0]
+        
+        title = video_data["title"]
+        duration_min = video_data["duration"]
+        thumbnail = video_data["thumbnails"][0]["url"].split("?")[0]
+        vidid = video_data["id"]
+        duration_sec = 0 if duration_min == "None" else time_to_seconds(duration_min)
+        
+        return title, duration_min, duration_sec, thumbnail, vidid
 
-    async def formats(self, link: str, videoid: Union[bool, str] = None):
+    async def video(self, link: str, videoid: bool = False) -> Tuple[int, str]:
+        """Fetches the direct video URL (best quality up to 720p)."""
         if videoid:
             link = self.base + link
         if "&" in link:
             link = link.split("&")[0]
-        ytdl_opts = {"quiet": True, "cookiefile" : cookie_txt_file()}
-        ydl = yt_dlp.YoutubeDL(ytdl_opts)
-        with ydl:
-            formats_available = []
-            r = ydl.extract_info(link, download=False)
-            for format in r["formats"]:
-                try:
-                    str(format["format"])
-                except:
-                    continue
-                if not "dash" in str(format["format"]).lower():
-                    try:
-                        format["format"]
-                        format["filesize"]
-                        format["format_id"]
-                        format["ext"]
-                        format["format_note"]
-                    except:
-                        continue
-                    formats_available.append(
-                        {
-                            "format": format["format"],
-                            "filesize": format["filesize"],
-                            "format_id": format["format_id"],
-                            "ext": format["ext"],
-                            "format_note": format["format_note"],
-                            "yturl": link,
-                        }
-                    )
-        return formats_available, link
-
-    async def slider(
-        self,
-        link: str,
-        query_type: int,
-        videoid: Union[bool, str] = None,
-    ):
-        if videoid:
-            link = self.base + link
-        if "&" in link:
-            link = link.split("&")[0]
-        a = VideosSearch(link, limit=10)
-        result = (await a.next()).get("result")
-        title = result[query_type]["title"]
-        duration_min = result[query_type]["duration"]
-        vidid = result[query_type]["id"]
-        thumbnail = result[query_type]["thumbnails"][0]["url"].split("?")[0]
-        return title, duration_min, thumbnail, vidid
+        
+        cookie_file = self._get_cookie_file()
+        cmd = [
+            "yt-dlp",
+            "--cookies", cookie_file if cookie_file else "",
+            "-g",
+            "-f",
+            "best[height<=?720][width<=?1280]",
+            link,
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        
+        if stdout:
+            return (1, stdout.decode().split("\n")[0])
+        return (0, stderr.decode())
 
     async def download(
         self,
         link: str,
         mystic,
-        video: Union[bool, str] = None,
-        videoid: Union[bool, str] = None,
-        songaudio: Union[bool, str] = None,
-        songvideo: Union[bool, str] = None,
-        format_id: Union[bool, str] = None,
-        title: Union[bool, str] = None,
-    ) -> str:
+        video: bool = False,
+        videoid: bool = False,
+        songaudio: bool = False,
+        songvideo: bool = False,
+        format_id: Optional[str] = None,
+        title: Optional[str] = None,
+    ) -> Union[Tuple[str, bool], None]:
+        """Downloads a video/audio file from YouTube."""
         if videoid:
             link = self.base + link
+        
         loop = asyncio.get_running_loop()
-        def audio_dl():
-            ydl_optssx = {
+        cookie_file = self._get_cookie_file()
+        
+        # Check file size if downloading directly
+        if video and not await is_on_off(1):
+            file_size = await self.check_file_size(link)
+            if file_size and (file_size / (1024 * 1024)) > 250:  # 250MB limit
+                await mystic.edit("File size exceeds 250MB limit.")
+                return None
+        
+        def _download_audio():
+            ydl_opts = {
                 "format": "bestaudio/best",
                 "outtmpl": "downloads/%(id)s.%(ext)s",
                 "geo_bypass": True,
                 "nocheckcertificate": True,
                 "quiet": True,
-                "cookiefile" : cookie_txt_file(),
                 "no_warnings": True,
+                "cookiefile": cookie_file,
             }
-            x = yt_dlp.YoutubeDL(ydl_optssx)
-            info = x.extract_info(link, False)
-            xyz = os.path.join("downloads", f"{info['id']}.{info['ext']}")
-            if os.path.exists(xyz):
-                return xyz
-            x.download([link])
-            return xyz
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(link, download=False)
+                filepath = os.path.join("downloads", f"{info['id']}.{info['ext']}")
+                if not os.path.exists(filepath):
+                    ydl.download([link])
+                return filepath
 
-        def video_dl():
-            ydl_optssx = {
+        def _download_video():
+            ydl_opts = {
                 "format": "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio[ext=m4a])",
                 "outtmpl": "downloads/%(id)s.%(ext)s",
                 "geo_bypass": True,
                 "nocheckcertificate": True,
                 "quiet": True,
-                "cookiefile" : cookie_txt_file(),
                 "no_warnings": True,
+                "cookiefile": cookie_file,
             }
-            x = yt_dlp.YoutubeDL(ydl_optssx)
-            info = x.extract_info(link, False)
-            xyz = os.path.join("downloads", f"{info['id']}.{info['ext']}")
-            if os.path.exists(xyz):
-                return xyz
-            x.download([link])
-            return xyz
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(link, download=False)
+                filepath = os.path.join("downloads", f"{info['id']}.{info['ext']}")
+                if not os.path.exists(filepath):
+                    ydl.download([link])
+                return filepath
 
-        def song_video_dl():
-            formats = f"{format_id}+140"
-            fpath = f"downloads/{title}"
-            ydl_optssx = {
-                "format": formats,
-                "outtmpl": fpath,
-                "geo_bypass": True,
-                "nocheckcertificate": True,
-                "quiet": True,
-                "no_warnings": True,
-                "cookiefile" : cookie_txt_file(),
-                "prefer_ffmpeg": True,
-                "merge_output_format": "mp4",
-            }
-            x = yt_dlp.YoutubeDL(ydl_optssx)
-            x.download([link])
-
-        def song_audio_dl():
-            fpath = f"downloads/{title}.%(ext)s"
-            ydl_optssx = {
-                "format": format_id,
-                "outtmpl": fpath,
-                "geo_bypass": True,
-                "nocheckcertificate": True,
-                "quiet": True,
-                "no_warnings": True,
-                "cookiefile" : cookie_txt_file(),
-                "prefer_ffmpeg": True,
-                "postprocessors": [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "mp3",
-                        "preferredquality": "192",
-                    }
-                ],
-            }
-            x = yt_dlp.YoutubeDL(ydl_optssx)
-            x.download([link])
-
-        if songvideo:
-            await loop.run_in_executor(None, song_video_dl)
-            fpath = f"downloads/{title}.mp4"
-            return fpath
-        elif songaudio:
-            await loop.run_in_executor(None, song_audio_dl)
-            fpath = f"downloads/{title}.mp3"
-            return fpath
+        if songvideo and format_id and title:
+            await loop.run_in_executor(None, _download_video)
+            return f"downloads/{title}.mp4", True
+        
+        elif songaudio and format_id and title:
+            await loop.run_in_executor(None, _download_audio)
+            return f"downloads/{title}.mp3", True
+        
         elif video:
             if await is_on_off(1):
-                direct = True
-                downloaded_file = await loop.run_in_executor(None, video_dl)
+                filepath = await loop.run_in_executor(None, _download_video)
+                return filepath, True
             else:
-                proc = await asyncio.create_subprocess_exec(
-                    "yt-dlp",
-                    "--cookies",cookie_txt_file(),
-                    "-g",
-                    "-f",
-                    "best[height<=?720][width<=?1280]",
-                    f"{link}",
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate()
-                if stdout:
-                    downloaded_file = stdout.decode().split("\n")[0]
-                    direct = False
-                else:
-                   file_size = await check_file_size(link)
-                   if not file_size:
-                     print("None file Size")
-                     return
-                   total_size_mb = file_size / (1024 * 1024)
-                   if total_size_mb > 250:
-                     print(f"File size {total_size_mb:.2f} MB exceeds the 100MB limit.")
-                     return None
-                   direct = True
-                   downloaded_file = await loop.run_in_executor(None, video_dl)
-        else:
-            direct = True
-            downloaded_file = await loop.run_in_executor(None, audio_dl)
-        return downloaded_file, direct
+                status, url = await self.video(link, videoid)
+                return (url, False) if status else (None, False)
+        
+        else:  # Audio-only download
+            filepath = await loop.run_in_executor(None, _download_audio)
+            return filepath, True
