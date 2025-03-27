@@ -3,21 +3,16 @@ import os
 import re
 import json
 from typing import Union
-
+import glob
+import random
+import logging
 import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from youtubesearchpython.__future__ import VideosSearch
+from VX.utils.database import is_on_off
+from VX.utils.formatters import time_to_seconds
 
-from Opus.utils.database import is_on_off
-from Opus.utils.formatters import time_to_seconds
-
-
-
-import os
-import glob
-import random
-import logging
 
 def cookie_txt_file():
     folder_path = f"{os.getcwd()}/cookies"
@@ -58,12 +53,12 @@ async def check_file_size(link):
     info = await get_format_info(link)
     if info is None:
         return None
-    
+
     formats = info.get('formats', [])
     if not formats:
         print("No formats found.")
         return None
-    
+
     total_size = parse_size(formats)
     return total_size
 
