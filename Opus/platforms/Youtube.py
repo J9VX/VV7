@@ -10,8 +10,8 @@ import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from youtubesearchpython.__future__ import VideosSearch
-from VX.utils.database import is_on_off
-from VX.utils.formatters import time_to_seconds
+from Opus.utils.database import is_on_off
+from Opus.utils.formatters import time_to_seconds
 
 
 def cookie_txt_file():
