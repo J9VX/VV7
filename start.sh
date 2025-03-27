@@ -43,7 +43,7 @@ start_services() {
     sleep 2 
 
     log_info "ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ᴠx ᴀɪ ᴄᴏʀᴇ ᴇɴɢɪɴᴇ..."
-    python3 -m VX &
+    python3 -m Opus &
     VX_PID=$!
     log_success "ᴠx ᴀɪ ᴄᴏʀᴇ ᴇɴɢɪɴᴇ ꜱᴛᴀʀᴛᴇᴅ (ᴘɪᴅ: ${VX_PID})"
 
