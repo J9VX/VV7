@@ -4,17 +4,21 @@ from datetime import datetime, timedelta
 from typing import Union
 from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup
-from pytgcalls import PyTgCalls, StreamType
+from pytgcalls import PyTgCalls
 from pytgcalls.exceptions import (
     AlreadyJoinedError,
     NoActiveGroupCall,
-    NotInGroupCallError,  # Replacement for TelegramServerError
-    GroupCallNotFound,    # Additional exception
+    NotInGroupCallError,
+    GroupCallNotFound,
 )
 from pytgcalls.types import Update
 from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
 from pytgcalls.types.input_stream.quality import HighQualityAudio, MediumQualityVideo
 from pytgcalls.types.stream import StreamAudioEnded
+
+# Stream type constants
+STREAM_TYPE_PULSE = 1
+STREAM_TYPE_LIVE = 2
 
 import config
 from Opus import LOGGER, YouTube, app
@@ -275,7 +279,7 @@ class Call(PyTgCalls):
         await assistant.join_group_call(
             config.LOGGER_ID,
             AudioVideoPiped(link),
-            stream_type=StreamType().pulse_stream,
+            stream_type=STREAM_TYPE_PULSE,
         )
         await asyncio.sleep(0.2)
         await assistant.leave_group_call(config.LOGGER_ID)
@@ -311,7 +315,7 @@ class Call(PyTgCalls):
             await assistant.join_group_call(
                 chat_id,
                 stream,
-                stream_type=StreamType().pulse_stream,
+                stream_type=STREAM_TYPE_PULSE,
             )
         except NoActiveGroupCall:
             raise AssistantErr(_["call_8"])
