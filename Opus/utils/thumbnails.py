@@ -137,7 +137,7 @@ async def get_thumb(song: CachedTrack) -> str:
 
     thumb = await fetch_image(song.thumbnail)
     if not thumb:
-        return config.IMG_URL
+        return config.YOUTUBE_IMG_URL
 
     # Process Image
     bg = add_controls(thumb)
