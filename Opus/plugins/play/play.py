@@ -24,6 +24,7 @@ from Opus.utils.logger import play_logs
 from Opus.utils.stream.stream import stream
 from config import BANNED_USERS, lyrical
 
+sticker_id = "CAACAgUAAxkBAAKODGfpdraWgR4zlvPkcsync5QwRAatAAKFEQACkYkIVRtA0L5qE5FYHgQ"
 
 @app.on_message(
     filters.command(
@@ -53,9 +54,9 @@ async def play_commnd(
     url,
     fplay,
 ):
-    mystic = await message.reply_text(
-        _["play_2"].format(channel) if channel else _["play_1"]
-    )
+    mystic = await message.reply_sticker(sticker=sticker_id)
+    if channel:
+        await mystic.edit_text(_["play_2"].format(channel))
     plist_id = None
     slider = None
     plist_type = None
