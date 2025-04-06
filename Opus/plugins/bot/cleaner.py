@@ -29,7 +29,7 @@ async def nuke_directories():
             print("✅ ᴀᴜᴛᴏ-ᴄʟᴇᴀɴ ᴄᴏᴍᴘʟᴇᴛᴇᴅ!")
         except Exception as e:
             await log_activity(f"💥 ᴇʀʀᴏʀ: {str(e)}")
-            print(f"⚠️ ᴄʟᴇᴀɴᴇʀ ᴇʀʀᴏʀ: {e}")
+            print(f"⚠️ ᴄʟᴇᴀɴᴇʀ �ᴇʀʀᴏʀ: {e}")
 
         await asyncio.sleep(CLEAN_INTERVAL)
 
@@ -39,9 +39,9 @@ async def start_nuker(_, message):
     asyncio.create_task(nuke_directories())
     await message.reply_text(
         "<blockquote>🛁 <b>ꜱᴛᴀʀᴛᴇᴅ ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ</b></blockquote>\n\n"
-        "<blockquote>• <b>ᴛᴀʀɢᴇᴛꜱ:</b> <code>{', '.join(TARGET_DIRS)}</code>\n"
-        "• <b>ꜰʀᴇqᴜᴇɴᴄʏ:</b> <code>{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ</code>\n"
-        "• <b>ᴍᴏᴅᴇ:</b> <code>ɴᴏ ᴇxᴄᴇᴘᴛɪᴏɴꜱ, ꜰᴜʟʟ ᴡɪᴘᴇ</code></blockquote>",
+        f"<blockquote>• <b>ᴛᴀʀɢᴇᴛꜱ:</b> <code>{', '.join(TARGET_DIRS)}</code>\n"
+        f"• <b>ꜰʀᴇqᴜᴇɴᴄʏ:</b> <code>{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ</code>\n"
+        "• <b>ᴍᴏᴅᴇ:</b> <code>ɴᴏ ᴇxᴄᴇᴘᴛɪᴏɴꜱ, ꜰᴜʟʟ ᴡɪᴘᴇ</code></blockquote>"
     )
 
 @app.on_message(filters.command("clean_now") & SUDOERS)
@@ -59,8 +59,8 @@ async def trigger_nuke(_, message):
 async def nuker_status(_, message):
     await message.reply_text(
         "<blockquote>📊 <b>ᴄʟᴇᴀɴᴇʀ ꜱᴛᴀᴛᴜꜱ</b></blockquote>\n\n"
-        "<blockquote>• <b>ʀᴜɴɴɪɴɢ:</b> <code>ʏᴇꜱ</code>\n"
-        "• <b>ɴᴇxᴛ ᴄʟᴇᴀɴ ɪɴ:</b> <code>{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ</code>\n"
-        "• <b>ᴛᴀʀɢᴇᴛꜱ:</b> <code>{', '.join(TARGET_DIRS)}</code></blockquote>\n"
+        f"<blockquote>• <b>ʀᴜɴɴɪɴɢ:</b> <code>ʏᴇꜱ</code>\n"
+        f"• <b>ɴᴇxᴛ ᴄʟᴇᴀɴ ɪɴ:</b> <code>{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ</code>\n"
+        f"• <b>ᴛᴀʀɢᴇᴛꜱ:</b> <code>{', '.join(TARGET_DIRS)}</code></blockquote>\n"
         "<blockquote>• <b>ᴡᴀʀɴɪɴɢ:</b> <code>ᴛʜɪꜱ ᴡɪʟʟ ᴅᴇʟᴇᴛᴇ ᴇᴠᴇʀʏᴛʜɪɴɢ ɪɴ ᴛᴀʀɢᴇᴛ ꜰᴏʟᴅᴇʀꜱ!</code></blockquote>"
     )
