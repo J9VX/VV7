@@ -8,16 +8,6 @@ from datetime import datetime
 
 
 CLEAN_INTERVAL = 1800  
-TARGET_DIRS = ["downloads", "cache"]  import asyncio
-import os
-import shutil
-from pyrogram import filters
-from Opus import app
-from Opus.misc import SUDOERS
-from datetime import datetime
-
-
-CLEAN_INTERVAL = 1800  
 TARGET_DIRS = ["downloads", "cache"]  
 LOG_FILE = "cleaner.log"  
 
