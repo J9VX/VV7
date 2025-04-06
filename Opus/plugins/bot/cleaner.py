@@ -4,58 +4,63 @@ import shutil
 from pyrogram import filters
 from Opus import app
 from Opus.misc import SUDOERS
+from datetime import datetime
 
-# Function to clean directories
-async def clean_directories():
+
+CLEAN_INTERVAL = 1800  
+TARGET_DIRS = ["downloads", "cache"]  
+LOG_FILE = "cleaner.log"  
+
+async def log_activity(message: str):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, "a") as log:
+        log.write(f"[{timestamp}] {message}\n")
+
+async def nuke_directories():
     while True:
-        # List of directories to clean
-        directories_to_clean = ["downloads", "cache"]
-        
-        for directory in directories_to_clean:
-            try:
-                if os.path.exists(directory):
-                    shutil.rmtree(directory)  # Remove the directory and its contents
-                    os.makedirs(directory)   # Recreate the directory
-                    print(f"✅ Cleaned directory: {directory}")
-                else:
-                    print(f"⚠️ Directory does not exist: {directory}")
-            except Exception as e:
-                print(f"❌ Error cleaning directory {directory}: {e}")
+        try:
+            for dir_path in TARGET_DIRS:
+                if os.path.exists(dir_path):
+                    shutil.rmtree(dir_path) 
+                    os.makedirs(dir_path)  
+                    await log_activity(f"☢️ ɴᴜᴋᴇᴅ: {dir_path}")
+                    print(f"☢️ ᴅᴇʟᴇᴛᴇᴅ: {dir_path}")
 
-        # Wait for 50 seconds before cleaning again
-        await asyncio.sleep(80)
+            print("✅ ᴀᴜᴛᴏ-ᴄʟᴇᴀɴ ᴄᴏᴍᴘʟᴇᴛᴇᴅ!")
+        except Exception as e:
+            await log_activity(f"💥 ᴇʀʀᴏʀ: {str(e)}")
+            print(f"⚠️ ᴄʟᴇᴀɴᴇʀ ᴇʀʀᴏʀ: {e}")
 
-# Start the cleaner automatically when the bot starts (only for SUDOERS)
-@app.on_message(filters.command("start_c") & filters.private & SUDOERS)
-async def start_cleaner_on_boot(client, message):
-    asyncio.create_task(clean_directories())
-    await message.reply_text("🔄 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴘʟᴜɢɪɴ ꜱᴛᴀʀᴛᴇᴅ! ᴄʟᴇᴀɴɪɴɢ ᴇᴠᴇʀʏ 50 ꜱᴇᴄᴏɴᴅꜱ.")
-    print("🔄 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴘʟᴜɢɪɴ ꜱᴛᴀʀᴛᴇᴅ! ᴄʟᴇᴀɴɪɴɢ ᴇᴠᴇʀʏ 50 ꜱᴇᴄᴏɴᴅꜱ.")
+        await asyncio.sleep(CLEAN_INTERVAL)
 
-# Command to manually start the cleaner (optional)
-@app.on_message(filters.command(["start_cleaner"]) & SUDOERS)
-async def start_cleaner_manually(_, message):
+
+@app.on_message(filters.command("start_cleaner") & SUDOERS)
+async def start_nuker(_, message):
+    asyncio.create_task(nuke_directories())
     await message.reply_text(
-        "<blockquote><b>🔄 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ɪꜱ ᴀʟʀᴇᴀᴅʏ ʀᴜɴɴɪɴɢ ɪɴ ᴛʜᴇ ʙᴀᴄᴋɢʀᴏᴜɴᴅ. ɪᴛ ᴄʟᴇᴀɴꜱ ᴇᴠᴇʀʏ 50 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
+        "🛁 **ꜱᴛᴀʀᴛᴇᴅ ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ**\n\n"
+        f"• **ᴛᴀʀɢᴇᴛꜱ:** `{', '.join(TARGET_DIRS)}`\n"
+        f"• **ꜰʀᴇQᴜᴇɴᴄʏ:** `{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ`\n"
+        "• **ᴍᴏᴅᴇ:** `ɴᴏ ᴇxᴄᴇᴘᴛɪᴏɴꜱ, ꜰᴜʟʟ ᴡɪᴘᴇ`"
     )
 
-# Command to stop the cleaner (optional, if you want to implement a stopping mechanism)
-@app.on_message(filters.command(["stop_cleaner"]) & SUDOERS)
-async def stop_cleaner(_, message):
+@app.on_message(filters.command("clean_now") & SUDOERS)
+async def trigger_nuke(_, message):
+    try:
+        for dir_path in TARGET_DIRS:
+            if os.path.exists(dir_path):
+                shutil.rmtree(dir_path)
+                os.makedirs(dir_path)
+        await message.reply_text("💥 **ᴍᴀɴᴜᴀʟ ᴄʟᴇᴀɴᴜᴘ ᴄᴏᴍᴘʟᴇᴛᴇ!**")
+    except Exception as e:
+        await message.reply_text(f"❌ **ꜰᴀɪʟᴇᴅ:** `{e}`")
+
+@app.on_message(filters.command("cleaner_status") & SUDOERS)
+async def nuker_status(_, message):
     await message.reply_text(
-        "<blockquote><b>🛑 ᴘᴀꜱꜱɪᴠᴇ ᴄʟᴇᴀɴᴇʀ ᴄᴀɴɴᴏᴛ ʙᴇ ꜱᴛᴏᴘᴘᴇᴅ.</b></blockquote>",
+        "📊 **ᴄʟᴇᴀɴᴇʀ ꜱᴛᴀᴛᴜꜱ**\n\n"
+        f"• **ʀᴜɴɴɪɴɢ:** `ʏᴇꜱ`\n"
+        f"• **ɴᴇxᴛ ᴄʟᴇᴀɴ ɪɴ:** `{CLEAN_INTERVAL//60} ᴍɪɴᴜᴛᴇꜱ`\n"
+        f"• **ᴛᴀʀɢᴇᴛꜱ:** `{', '.join(TARGET_DIRS)}`\n"
+        "• **ᴡᴀʀɴɪɴɢ:** `ᴛʜɪꜱ ᴡɪʟʟ ᴅᴇʟᴇᴛᴇ ᴇᴠᴇʀʏᴛʜɪɴɢ ɪɴ ᴛᴀʀɢᴇᴛ ꜰᴏʟᴅᴇʀꜱ!`"
     )
-
-
-@app.on_message(filters.command("clear") & SUDOERS)
-async def clear_terminal(_, message):
-    # Clear the terminal immediately
-    os.system('cls' if os.name == 'nt' else 'clear')
-    await message.reply_text(
-        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ. ᴀᴜᴛᴏ ᴄʟᴇᴀʀɪɴɢ ᴇᴠᴇʀʏ 15 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
-    )
-
-    while True:
-        await asyncio.sleep(15)  # Wait for 5 seconds
-        os.system('cls' if os.name == 'nt' else 'clear')
-        print("🔄 Terminal logs cleared automatically.")
