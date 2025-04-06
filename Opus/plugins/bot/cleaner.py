@@ -64,3 +64,15 @@ async def nuker_status(_, message):
         f"• <b>ᴛᴀʀɢᴇᴛꜱ:</b> <code>{', '.join(TARGET_DIRS)}</code></blockquote>\n"
         "<blockquote>• <b>ᴡᴀʀɴɪɴɢ:</b> <code>ᴛʜɪꜱ ᴡɪʟʟ ᴅᴇʟᴇᴛᴇ ᴇᴠᴇʀʏᴛʜɪɴɢ ɪɴ ᴛᴀʀɢᴇᴛ ꜰᴏʟᴅᴇʀꜱ!</code></blockquote>"
     )
+
+@app.on_message(filters.command("clear") & SUDOERS)
+async def clear_terminal(_, message):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    await message.reply_text(
+        "<blockquote><b>✅ ᴛᴇʀᴍɪɴᴀʟ ʟᴏɢꜱ ᴄʟᴇᴀʀᴇᴅ. ᴀᴜᴛᴏ ᴄʟᴇᴀʀɪɴɢ ᴇᴠᴇʀʏ 15 ꜱᴇᴄᴏɴᴅꜱ.</b></blockquote>",
+    )
+
+    while True:
+        await asyncio.sleep(10)  # Wait for 5 seconds
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("🔄 Terminal logs cleared automatically.")
