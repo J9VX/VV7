@@ -26,7 +26,7 @@ async def auto_end_stream(_, message: Message):
         # This would require implementation in your streaming logic
         await message.reply_text(
             "ɪɴsᴛᴀɴᴛ ᴇɴᴅ ᴍᴏᴅᴇ ᴀᴄᴛɪᴠᴀᴛᴇᴅ.\n\n"
-            "ᴀssɪsᴛᴀɴᴛ �ᴡɪʟʟ ʟᴇᴀᴠᴇ ɪᴍᴍᴇᴅɪᴀᴛᴇʟʏ ᴡʜᴇɴ ɴᴏ ᴏɴᴇ ɪs ʟɪsᴛᴇɴɪɴɢ."
+            "ᴀssɪsᴛᴀɴᴛ ᴡɪʟʟ ʟᴇᴀᴠᴇ ɪᴍᴍᴇᴅɪᴀᴛᴇʟʏ ᴡʜᴇɴ ɴᴏ ᴏɴᴇ ɪs ʟɪsᴛᴇɴɪɴɢ."
         )
     elif state == "1min":
         await autoend_on()
