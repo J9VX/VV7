@@ -6,7 +6,7 @@ from Opus.misc import SUDOERS
 from Opus.utils.database import autoend_off, autoend_on
 
 # Global variable to track autoend status
-AUTOEND_ENABLED = False
+AUTOEND_ENABLED = True
 
 async def auto_leave_checker():
     """Background task to check and leave empty voice chats"""
