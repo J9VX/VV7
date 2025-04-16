@@ -22,21 +22,20 @@ from config import BANNED_USERS
 from strings import get_string
 
 
-async def send_combined_message(message: Message, text: str, photo_url: str, reply_markup=None):
-    """Send a single message with caption first, then image"""
-    # First send the text as a message
-    sent_message = await message.reply_text(
+async def send_text_then_image(message: Message, text: str, photo_url: str, reply_markup=None):
+    """Send text first, then reply with image in a single flow"""
+    # First send the text message
+    text_msg = await message.reply_text(
         text=text,
         reply_markup=reply_markup
     )
     
-    # Then reply to that message with the image
-    if photo_url:
-        await sent_message.reply_photo(
-            photo=photo_url,
-            reply_to_message_id=sent_message.id
-        )
-    return sent_message
+    # Immediately reply with the image
+    await text_msg.reply_photo(
+        photo=photo_url,
+        reply_to_message_id=text_msg.id
+    )
+    return text_msg
 
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
@@ -49,7 +48,7 @@ async def start_pm(client, message: Message, _):
         
         if name[0:4] == "help":
             keyboard = help_pannel(_)
-            await send_combined_message(
+            await send_text_then_image(
                 message,
                 text=_["help_1"].format(config.SUPPORT_CHAT),
                 photo_url=config.START_IMG_URL,
@@ -94,7 +93,7 @@ async def start_pm(client, message: Message, _):
                 ])
                 
                 await m.delete()
-                await send_combined_message(
+                await send_text_then_image(
                     message,
                     text=searched_text,
                     photo_url=result["thumbnails"][0]["url"].split("?")[0],
@@ -113,7 +112,7 @@ async def start_pm(client, message: Message, _):
             return
             
     # Default start message for private chats
-    await send_combined_message(
+    await send_text_then_image(
         message,
         text=_["start_2"].format(message.from_user.mention, app.mention),
         photo_url=config.START_IMG_URL,
@@ -132,7 +131,7 @@ async def start_pm(client, message: Message, _):
 @LanguageStart
 async def start_gp(client, message: Message, _):
     uptime = int(time.time() - _boot_)
-    await send_combined_message(
+    await send_text_then_image(
         message,
         text=_["start_1"].format(app.mention, get_readable_time(uptime)),
         photo_url=config.START_IMG_URL,
@@ -171,7 +170,7 @@ async def welcome(client, message: Message):
                     )
                     return await app.leave_chat(message.chat.id)
 
-                await send_combined_message(
+                await send_text_then_image(
                     message,
                     text=_["start_3"].format(
                         message.from_user.first_name,
