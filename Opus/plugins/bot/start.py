@@ -154,5 +154,3 @@ async def welcome(client, message: Message):
         except Exception as ex:
             print(ex)
 
-
-make the caption first then image
