@@ -22,14 +22,21 @@ from config import BANNED_USERS
 from strings import get_string
 
 
-async def send_text_first(message: Message, text: str, reply_markup=None, photo_url=config.START_IMG_URL):
-    """Helper function to send text first followed by photo"""
-    await message.reply_text(
+async def send_combined_message(message: Message, text: str, photo_url: str, reply_markup=None):
+    """Send a single message with caption first, then image"""
+    # First send the text as a message
+    sent_message = await message.reply_text(
         text=text,
         reply_markup=reply_markup
     )
+    
+    # Then reply to that message with the image
     if photo_url:
-        await message.reply_photo(photo=photo_url)
+        await sent_message.reply_photo(
+            photo=photo_url,
+            reply_to_message_id=sent_message.id
+        )
+    return sent_message
 
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
@@ -42,9 +49,10 @@ async def start_pm(client, message: Message, _):
         
         if name[0:4] == "help":
             keyboard = help_pannel(_)
-            await send_text_first(
+            await send_combined_message(
                 message,
                 text=_["help_1"].format(config.SUPPORT_CHAT),
+                photo_url=config.START_IMG_URL,
                 reply_markup=keyboard
             )
             return
@@ -86,11 +94,11 @@ async def start_pm(client, message: Message, _):
                 ])
                 
                 await m.delete()
-                await send_text_first(
+                await send_combined_message(
                     message,
                     text=searched_text,
-                    reply_markup=keyboard,
-                    photo_url=result["thumbnails"][0]["url"].split("?")[0]
+                    photo_url=result["thumbnails"][0]["url"].split("?")[0],
+                    reply_markup=keyboard
                 )
                 
                 if await is_on_off(2):
@@ -105,9 +113,10 @@ async def start_pm(client, message: Message, _):
             return
             
     # Default start message for private chats
-    await send_text_first(
+    await send_combined_message(
         message,
         text=_["start_2"].format(message.from_user.mention, app.mention),
+        photo_url=config.START_IMG_URL,
         reply_markup=InlineKeyboardMarkup(private_panel(_))
     )
     
@@ -123,9 +132,10 @@ async def start_pm(client, message: Message, _):
 @LanguageStart
 async def start_gp(client, message: Message, _):
     uptime = int(time.time() - _boot_)
-    await send_text_first(
+    await send_combined_message(
         message,
         text=_["start_1"].format(app.mention, get_readable_time(uptime)),
+        photo_url=config.START_IMG_URL,
         reply_markup=InlineKeyboardMarkup(start_panel(_))
     )
     await add_served_chat(message.chat.id)
@@ -161,7 +171,7 @@ async def welcome(client, message: Message):
                     )
                     return await app.leave_chat(message.chat.id)
 
-                await send_text_first(
+                await send_combined_message(
                     message,
                     text=_["start_3"].format(
                         message.from_user.first_name,
@@ -169,6 +179,7 @@ async def welcome(client, message: Message):
                         message.chat.title,
                         app.mention,
                     ),
+                    photo_url=config.START_IMG_URL,
                     reply_markup=InlineKeyboardMarkup(start_panel(_))
                 )
                 await add_served_chat(message.chat.id)
