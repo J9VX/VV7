@@ -1,5 +1,6 @@
 import re
 from os import getenv
+import os
 from dotenv import load_dotenv
 from pyrogram import filters
 
@@ -22,10 +23,7 @@ UPSTREAM_REPO = getenv(
     "UPSTREAM_REPO",
     "https://github.com/J9VX/VX7",
 )
-REPO_PASS_STR = getenv("REPO_PASS")
-if not REPO_PASS_STR or not REPO_PASS_STR.isdigit():
-    raise ValueError("REPO_PASS environment variable must be a valid integer.")
-REPO_PASS = int(REPO_PASS_STR)
+REPO_PASSWORD = os.getenv("REPO_PASSWORD", None)
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv(
     "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"
