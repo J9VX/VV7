@@ -2,54 +2,78 @@ import asyncio
 import speedtest
 from pyrogram import filters
 from pyrogram.types import Message
+from speedtest import ConfigRetrievalError, Speedtest
 
 from Opus import app
 from Opus.misc import SUDOERS
 from Opus.utils.decorators.language import language
 
+def get_readable_file_size(size_in_bytes):
+    """Convert bytes to human-readable format"""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_in_bytes < 1024.0:
+            return f"{size_in_bytes:.2f} {unit}"
+        size_in_bytes /= 1024.0
+    return f"{size_in_bytes:.2f} PB"
 
-def testspeed(m, _):
+async def run_speedtest(m: Message):
     try:
-        test = speedtest.Speedtest()
-        test.get_best_server()
-        m = m.edit_text(_["server_12"])
-        test.download()
-        m = m.edit_text(_["server_13"])
-        test.upload()
-        test.results.share()
-        result = test.results.dict()
-        m = m.edit_text(_["server_14"])
+        st = Speedtest()
+        await m.edit_text("<i>Finding best server...</i>")
+        st.get_best_server()
+        
+        await m.edit_text("<i>Testing download speed...</i>")
+        st.download()
+        
+        await m.edit_text("<i>Testing upload speed...</i>")
+        st.upload()
+        
+        results = st.results.dict()
+        return results, None
+        
+    except ConfigRetrievalError:
+        return None, "Unable to connect to servers to test latency."
     except Exception as e:
-        return m.edit_text(f"<code>{e}</code>")
-    return result
+        return None, f"Error: {str(e)}"
 
 @app.on_message(filters.command(["speedtest", "spt"]) & SUDOERS)
 @language
-async def speedtest_function(client, message: Message, _):
+async def speedtest_command(client, message: Message, _):
+    m = await message.reply_text("<i>Starting speedtest...</i>")
+    
+    results, error = await run_speedtest(m)
+    
+    if error:
+        await m.edit_text(error)
+        return
+    
     try:
-        m = await message.reply_text(_["server_11"])
+        string_speed = f"""
+➲ <b><i>SPEEDTEST INFO</i></b>
+┠ <b>Upload:</b> <code>{get_readable_file_size(results['upload'] / 8)}/s</code>
+┠ <b>Download:</b> <code>{get_readable_file_size(results['download'] / 8)}/s</code>
+┠ <b>Ping:</b> <code>{results['ping']} ms</code>
+┠ <b>Time:</b> <code>{results['timestamp']}</code>
+┠ <b>Data Sent:</b> <code>{get_readable_file_size(int(results['bytes_sent']))}</code>
+┖ <b>Data Received:</b> <code>{get_readable_file_size(int(results['bytes_received']))}</code>
+
+➲ <b><i>SPEEDTEST SERVER</i></b>
+┠ <b>Name:</b> <code>{results['server']['name']}</code>
+┠ <b>Country:</b> <code>{results['server']['country']}, {results['server']['cc']}</code>
+┠ <b>Sponsor:</b> <code>{results['server']['sponsor']}</code>
+┠ <b>Latency:</b> <code>{results['server']['latency']}</code>
+┠ <b>Latitude:</b> <code>{results['server']['lat']}</code>
+┖ <b>Longitude:</b> <code>{results['server']['lon']}</code>
+
+➲ <b><i>CLIENT DETAILS</i></b>
+┠ <b>IP Address:</b> <code>{results['client']['ip']}</code>
+┠ <b>Latitude:</b> <code>{results['client']['lat']}</code>
+┠ <b>Longitude:</b> <code>{results['client']['lon']}</code>
+┠ <b>Country:</b> <code>{results['client']['country']}</code>
+┠ <b>ISP:</b> <code>{results['client']['isp']}</code>
+┖ <b>ISP Rating:</b> <code>{results['client']['isprating']}</code>
+"""
+        await m.edit_text(string_speed)
         
-        # Using asyncio.get_event_loop().run_in_executor for running testspeed
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, testspeed, m, _)
-
-        output = _["server_15"].format(
-            result["client"]["isp"],
-            result["client"]["country"],
-            result["server"]["name"],
-            result["server"]["country"],
-            result["server"]["cc"],
-            result["server"]["sponsor"],
-            result["server"]["latency"],
-            result["ping"],
-        )
-
-        msg = await message.reply_photo(photo=result["share"], caption=output)
-        await m.delete()
-
-    except asyncio.CancelledError:
-        # Handle cancellation gracefully (e.g., bot is shutting down)
-        await message.reply_text("Sᴘᴇᴇᴅᴛᴇsᴛ ᴡᴀs ᴅᴇᴛᴏɴᴀᴛᴇᴅ ᴅᴜᴇ ᴛᴏ ʙᴏᴛ sʜᴜᴛᴅᴏᴡɴ.")
     except Exception as e:
-        # Handle any other unexpected errors
-        await message.reply_text(f"ᴇxᴄᴇᴘᴛɪᴏɴᴀʟ ᴇʀʀᴏʀ ᴇʟᴇᴠᴀᴛᴇᴅ: {e}")
+        await m.edit_text(f"Error processing results: {str(e)}")
