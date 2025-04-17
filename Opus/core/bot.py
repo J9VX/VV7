@@ -65,15 +65,15 @@ def handle_shutdown_signal(loop, bot):
 if __name__ == "__main__":
     bot = Anony()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     # Register signal handler for SIGINT (Ctrl+C)
     loop.add_signal_handler(signal.SIGINT, handle_shutdown_signal, loop, bot)
 
     try:
-        # Start the bot
         loop.run_until_complete(bot.start())
     except KeyboardInterrupt:
         print("sᴛᴏʀᴍ ɪs ᴍᴀɴɪᴘᴜʟᴀᴛᴇᴅ. Exɪᴛɪɴɢ...")
     finally:
-        loop.close()  # Ensure the loop is closed after shutdown
+        loop.close()
