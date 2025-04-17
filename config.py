@@ -5,7 +5,11 @@ from pyrogram import filters
 
 load_dotenv()
 
-API_ID = int(getenv("API_ID", ""))
+API_ID_STR = getenv("API_ID")
+if not API_ID_STR or not API_ID_STR.isdigit():
+    raise ValueError("API_ID environment variable must be a valid integer.")
+API_ID = int(API_ID_STR)
+
 API_HASH = getenv("API_HASH", "")
 BOT_TOKEN = getenv("BOT_TOKEN", "")
 MONGO_DB_URI = getenv("MONGO_DB_URI", "")
