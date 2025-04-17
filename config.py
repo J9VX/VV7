@@ -18,6 +18,7 @@ UPSTREAM_REPO = getenv(
     "UPSTREAM_REPO",
     "https://github.com/J9VX/VX7",
 )
+REPO_PASS = int(getenv("REPO_PASS", ""))
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv(
     "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"
